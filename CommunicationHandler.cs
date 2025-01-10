@@ -90,8 +90,20 @@ namespace ThServer
                     break;
                 case "connect":
                     gamesPool.AddClient(clientEndpoint, gid);
-                    response = gamesPool.DuoGames[gid - 100].GetInitResponse(true);
-                    await SendResponseBytesAsync(response, clientEndpoint);
+                    try
+                    {
+                        response = gamesPool.DuoGames[gid - 100].GetInitResponse(true);
+                    }
+                    catch
+                    {
+                        response = new byte[3] { 84, 72, 0 };
+                        System.Console.WriteLine("Not found");
+                    }
+                    finally
+                    {
+                        await SendResponseBytesAsync(response, clientEndpoint);
+                    }
+
                     break;
                 case "begin":
                     Task.Run(async () => gamesPool.DuoGames[gid - 100].StartGameLoop(this, gamesPool));
