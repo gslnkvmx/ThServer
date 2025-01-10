@@ -20,6 +20,7 @@ namespace ThServer
     {
       Position = new int[2];
       Id = id;
+      Score = 0;
     }
 
     public void SetDirection(Directions direction)

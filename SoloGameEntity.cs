@@ -34,7 +34,7 @@ namespace ThServer
 
         public async Task StartGameLoop(CommunicationHandler handler, GamesPool pool)
         {
-            var client = pool.GamesClients[Id];
+            var client = pool.GamesClients[Id][0];
 
             gameTimer.Elapsed += GameTimer_Tick;
             gameTimer.Start();

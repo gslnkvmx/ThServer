@@ -60,33 +60,82 @@ namespace ThServer
                 prop = requestSplit[4];
             }
 
+            byte[] response = [];
+            var succses = false;
+
             switch (command)
             {
                 case "hello":
                     await SendResponseAsync("Threasure hunters sever is ready!", clientEndpoint);
                     break;
                 case "start":
-                    int newGid = gamesPool.AddSoloGame();
-                    gamesPool.AddClient(clientEndpoint, newGid);
-                    byte[] response = gamesPool.SoloGames[newGid].GetInitResponse();
+                    if (prop == "solo")
+                    {
+                        int newGid = gamesPool.AddSoloGame();
+                        gamesPool.AddClient(clientEndpoint, newGid);
+                        response = gamesPool.SoloGames[newGid].GetInitResponse();
+                        await SendResponseBytesAsync(response, clientEndpoint);
+                        Task.Run(async () => gamesPool.SoloGames[newGid].StartGameLoop(this, gamesPool));
+                    }
+                    else if (prop == "duo")
+                    {
+                        int newGid = gamesPool.AddDuoGame();
+                        System.Console.WriteLine(newGid);
+                        gamesPool.AddClient(clientEndpoint, newGid);
+                        gamesPool.DuoGames[newGid - 100].InitGame();
+                        response = gamesPool.DuoGames[newGid - 100].GetInitResponse(true);
+                        await SendResponseBytesAsync(response, clientEndpoint);
+                    }
+                    System.Console.WriteLine(response[3]);
+                    break;
+                case "connect":
+                    gamesPool.AddClient(clientEndpoint, gid);
+                    response = gamesPool.DuoGames[gid - 100].GetInitResponse(true);
                     await SendResponseBytesAsync(response, clientEndpoint);
-                    Task.Run(async () => gamesPool.SoloGames[newGid].StartGameLoop(this, gamesPool));
+                    break;
+                case "begin":
+                    Task.Run(async () => gamesPool.DuoGames[gid - 100].StartGameLoop(this, gamesPool));
                     break;
                 case "go":
-                    switch (prop)
+                    if (gid < 100)
                     {
-                        case "u":
-                            gamesPool.SoloGames[gid].Player.SetDirection(Directions.Up);
-                            break;
-                        case "d":
-                            gamesPool.SoloGames[gid].Player.SetDirection(Directions.Down);
-                            break;
-                        case "l":
-                            gamesPool.SoloGames[gid].Player.SetDirection(Directions.Left);
-                            break;
-                        case "r":
-                            gamesPool.SoloGames[gid].Player.SetDirection(Directions.Right);
-                            break;
+                        switch (prop)
+                        {
+                            case "u":
+                                gamesPool.SoloGames[gid].Player.SetDirection(Directions.Up);
+                                break;
+                            case "d":
+                                gamesPool.SoloGames[gid].Player.SetDirection(Directions.Down);
+                                break;
+                            case "l":
+                                gamesPool.SoloGames[gid].Player.SetDirection(Directions.Left);
+                                break;
+                            case "r":
+                                gamesPool.SoloGames[gid].Player.SetDirection(Directions.Right);
+                                break;
+                        }
+                    }
+
+                    else
+                    {
+                        var movingPlayer = gamesPool.DuoGames[gid - 100].Player1;
+                        if (pid == 2) movingPlayer = gamesPool.DuoGames[gid - 100].Player2;
+
+                        switch (prop)
+                        {
+                            case "u":
+                                movingPlayer.SetDirection(Directions.Up);
+                                break;
+                            case "d":
+                                movingPlayer.SetDirection(Directions.Down);
+                                break;
+                            case "l":
+                                movingPlayer.SetDirection(Directions.Left);
+                                break;
+                            case "r":
+                                movingPlayer.SetDirection(Directions.Right);
+                                break;
+                        }
                     }
                     break;
             }

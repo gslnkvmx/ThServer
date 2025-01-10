@@ -36,7 +36,8 @@ namespace ThServer
 
     public async Task StartGameLoop(CommunicationHandler handler, GamesPool pool)
     {
-      var client = pool.GamesClients[Id];
+      var client1 = pool.GamesClients[Id][0];
+      var client2 = pool.GamesClients[Id][1];
 
       gameTimer.Elapsed += GameTimer_Tick;
       gameTimer.Start();
@@ -49,10 +50,12 @@ namespace ThServer
         // Проверяем, прошло ли достаточно времени
         if (sw.ElapsedMilliseconds >= frameInterval)
         {
-          MovePlayer();
+          MovePlayer(1);
+          MovePlayer(2);
           PickTreasure();
 
-          await handler.SendResponseBytesAsync(GetStateResponse(), client);
+          await handler.SendResponseBytesAsync(GetStateResponse(), client1);
+          await handler.SendResponseBytesAsync(GetStateResponse(), client2);
 
           sw.Restart();
         }
@@ -62,6 +65,11 @@ namespace ThServer
 
       byte[] response = new byte[6]; //283 для поля 16 на 16
 
+      var winner = new Player(0);
+
+      if (Player1.Score > Player2.Score) winner = Player1;
+      else if (Player1.Score < Player2.Score) winner = Player2;
+
       //TH
       response[0] = 84;
       response[1] = 72;
@@ -69,9 +77,10 @@ namespace ThServer
       response[3] = winner.Id;
       //100 - окончание игры
       response[4] = 100;
-      response[5] = (byte)Score;
+      response[5] = (byte)winner.Score;
 
-      await handler.SendResponseBytesAsync(response, client);
+      await handler.SendResponseBytesAsync(GetStateResponse(), client1);
+      await handler.SendResponseBytesAsync(GetStateResponse(), client2);
     }
 
 
@@ -122,22 +131,24 @@ namespace ThServer
 
     public byte[] GetStateResponse()
     {
-      byte[] response = new byte[9]; //283 для поля 16 на 16
+      byte[] response = new byte[11]; //283 для поля 16 на 16
 
       //TH
       response[0] = 84;
       response[1] = 72;
       //game id (100 <= gid <= 255)
       response[2] = Id;
-      response[3] = Player.Id;
 
       //Player info
-      response[4] = (byte)Player.Position[0];
-      response[5] = (byte)Player.Position[1];
-      response[6] = (byte)Score;
+      response[3] = (byte)Player1.Position[0];
+      response[4] = (byte)Player1.Position[1];
+      response[5] = (byte)Player2.Position[0];
+      response[6] = (byte)Player2.Position[1];
+      response[7] = (byte)Player1.Score;
+      response[8] = (byte)Player2.Score;
 
       //_treasures
-      Array.Copy(_treasure, 0, response, 7, 2);
+      Array.Copy(_treasure, 0, response, 9, 2);
 
       return response;
     }
@@ -152,13 +163,13 @@ namespace ThServer
         Random rnd = new Random();
 
         int i = rnd.Next(0, _maze.Road.Count - 1);
-        Player.SetPosition(_maze.Road[i][1], _maze.Road[i][0]);
+        Player1.SetPosition(_maze.Road[i][1], _maze.Road[i][0]);
+        i = rnd.Next(0, _maze.Road.Count - 1);
+        Player2.SetPosition(_maze.Road[i][1], _maze.Road[i][0]);
 
         int t = rnd.Next(0, _maze.Road.Count - 1);
         _treasure[0] = (byte)_maze.Road[t][0];
         _treasure[1] = (byte)_maze.Road[t][1];
-
-        Score = 0;
 
         return true;
       }
@@ -169,10 +180,9 @@ namespace ThServer
       }
     }
 
-    public byte[] GetInitResponse()
+    public byte[] GetInitResponse(bool init)
     {
-      var init = InitGame();
-      byte[] response = new byte[5 + size * size + 3 + 2]; //283 для поля 16 на 16
+      byte[] response = new byte[5 + size * size + 6 + 2]; //283 для поля 16 на 16
 
       //TH
       response[0] = 84;
@@ -181,7 +191,6 @@ namespace ThServer
       response[2] = (byte)(init ? 1 : 0);
       //game id (100 <= gid <= 255)
       response[3] = Id;
-      response[4] = Player.Id;
 
       byte[] mazeListed = new byte[size * size];
 
@@ -194,15 +203,18 @@ namespace ThServer
       }
 
       //maze
-      Array.Copy(mazeListed, 0, response, 5, mazeListed.Length);
+      Array.Copy(mazeListed, 0, response, 4, mazeListed.Length);
 
       //Player info
-      response[261] = (byte)Player.Position[0];
-      response[262] = (byte)Player.Position[1];
-      response[263] = (byte)Score;
+      response[260] = (byte)Player1.Position[0];
+      response[261] = (byte)Player1.Position[1];
+      response[262] = (byte)Player2.Position[0];
+      response[263] = (byte)Player2.Position[1];
+      response[264] = (byte)Player1.Score;
+      response[265] = (byte)Player2.Score;
 
       //_treasures
-      Array.Copy(_treasure, 0, response, 264, 2);
+      Array.Copy(_treasure, 0, response, 266, 2);
 
       return response;
     }
