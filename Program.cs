@@ -7,31 +7,27 @@ namespace ThServer
 {
     internal class Program
     {
+        public const int SIO_UDP_CONNRESET = -1744830452;
         static void Main(string[] args)
         {
+
             var udpServer = new UdpClient(2004);
+            udpServer.Client.IOControl(
+                (IOControlCode)SIO_UDP_CONNRESET,
+                new byte[] { 0, 0, 0, 0 },
+                null
+                );
             var handler = new CommunicationHandler(udpServer);
 
             Task.Run(async () =>
             {
                 while (true)
                 {
-                    try
-                    {
-                        var received = await handler.ReciveRequestAsync();
-                        Console.WriteLine(received.Item1);
-                        await handler.HandleRequest(received.Item1, received.Item2);
-                    }
-                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
-                    {
-                        udpServer.Close();
-                        Console.WriteLine($"Client disconnected unexpectedly: {ex.Message}");
+                    var received = await handler.ReciveRequestAsync();
+                    var clientEndPoint = received.Item2;
 
-                        // Пересоздаем сокет для продолжения работы
-                        udpServer = new UdpClient(2004);
-                        handler = new CommunicationHandler(udpServer);
-                        continue;
-                    }
+                    Console.WriteLine(received.Item1);
+                    await handler.HandleRequest(received.Item1, received.Item2);
                 }
             });
 
