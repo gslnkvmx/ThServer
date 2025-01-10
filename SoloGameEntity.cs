@@ -13,7 +13,7 @@ namespace ThServer
     internal class SoloGameEntity
     {
         private System.Timers.Timer gameTimer;  // create a new instance of the dispatcher timer called game timer
-        private int timeLeft = 10;
+        private int timeLeft = 5;
         bool gameOver = false;
         static int size = 16;
         private readonly Maze _maze;
@@ -70,6 +70,8 @@ namespace ThServer
             response[5] = (byte)Score;
 
             await handler.SendResponseBytesAsync(response, client);
+
+            pool.RemoveSoloGame(Id);
         }
 
 

@@ -22,11 +22,23 @@ namespace ThServer
       return newGame.Id;
     }
 
+    public void RemoveSoloGame(byte gid)
+    {
+      SoloGames.RemoveAt(gid);
+      GamesClients.Remove(gid);
+    }
+
     public int AddDuoGame()
     {
       var newGame = new DuoGameEntity((byte)(DuoGames.Count + 100));
       DuoGames.Add(newGame);
       return newGame.Id;
+    }
+
+    public void RemoveDuoGame(byte gid)
+    {
+      DuoGames.RemoveAt(gid - 100);
+      GamesClients.Remove(gid);
     }
 
     public void AddClient(IPEndPoint client, int gid)

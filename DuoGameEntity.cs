@@ -13,7 +13,7 @@ namespace ThServer
   internal class DuoGameEntity
   {
     private System.Timers.Timer gameTimer;  // create a new instance of the dispatcher timer called game timer
-    private int timeLeft = 10;
+    private int timeLeft = 5;
 
     bool gameOver = false;
     static int size = 16;
@@ -79,8 +79,10 @@ namespace ThServer
       response[4] = 100;
       response[5] = (byte)winner.Score;
 
-      await handler.SendResponseBytesAsync(GetStateResponse(), client1);
-      await handler.SendResponseBytesAsync(GetStateResponse(), client2);
+      await handler.SendResponseBytesAsync(response, client1);
+      await handler.SendResponseBytesAsync(response, client2);
+
+      pool.RemoveDuoGame(Id);
     }
 
 
