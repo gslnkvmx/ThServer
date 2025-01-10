@@ -16,9 +16,22 @@ namespace ThServer
             {
                 while (true)
                 {
-                    var received = await handler.ReciveRequestAsync();
-                    Console.WriteLine(received.Item1);
-                    await handler.HandleRequest(received.Item1, received.Item2);
+                    try
+                    {
+                        var received = await handler.ReciveRequestAsync();
+                        Console.WriteLine(received.Item1);
+                        await handler.HandleRequest(received.Item1, received.Item2);
+                    }
+                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        udpServer.Close();
+                        Console.WriteLine($"Client disconnected unexpectedly: {ex.Message}");
+
+                        // Пересоздаем сокет для продолжения работы
+                        udpServer = new UdpClient(2004);
+                        handler = new CommunicationHandler(udpServer);
+                        continue;
+                    }
                 }
             });
 

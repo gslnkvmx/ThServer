@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ThServer
 {
@@ -50,7 +51,17 @@ namespace ThServer
                     MovePlayer();
                     PickTreasure();
 
-                    await handler.SendResponseBytesAsync(GetStateResponse(), client);
+                    try
+                    {
+                        await handler.SendResponseBytesAsync(GetStateResponse(), client);
+                    }
+                    catch
+                    {
+                        pool.RemoveSoloGame(Id);
+                        gameTimer.Stop();
+                        return;
+                    }
+
 
                     sw.Restart();
                 }
