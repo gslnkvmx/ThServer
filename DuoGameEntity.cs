@@ -13,7 +13,7 @@ namespace ThServer
   internal class DuoGameEntity
   {
     private System.Timers.Timer gameTimer;  // create a new instance of the dispatcher timer called game timer
-    private int timeLeft = 5;
+    private int timeLeft = 30;
 
     bool gameOver = false;
     static int size = 16;
